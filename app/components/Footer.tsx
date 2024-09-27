@@ -82,7 +82,7 @@ function FooterMenu({
                   </a>
                 </li>
                 <li>
-                  <a href="terms-of-service" className="hover:underline">
+                  <a href="/policies/terms-of-service" className="hover:underline">
                     Terms &amp; Conditions
                   </a>
                 </li>
