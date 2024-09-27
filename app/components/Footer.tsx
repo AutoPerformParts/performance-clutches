@@ -87,14 +87,30 @@ function FooterMenu({
                   </a>
                 </li>
                 <li>
-                  <a href="/policies/privacy-policy" className="hover:underline">
+                  <a
+                    href="/policies/privacy-policy"
+                    className="hover:underline"
+                  >
                     Privacy Policy
                   </a>
                 </li>
                 <li>
-                  <a href="/policies/terms-of-service" className="hover:underline">
+                  <a
+                    href="/policies/terms-of-service"
+                    className="hover:underline"
+                  >
                     Terms &amp; Conditions
                   </a>
+                </li>
+                <li>
+                  <Link
+                    to={'/warranty-policy.docx'}
+                    download="warranty-policy.docx"
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    Warranty &amp; Policy
+                  </Link>
                 </li>
               </ul>
             </div>
