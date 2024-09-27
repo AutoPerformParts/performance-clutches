@@ -76,7 +76,17 @@ function FooterMenu({
                 Legal
               </h2>
               <ul className="text-gray-600 dark:text-gray-400">
-                <li className="mb-4">
+                <li>
+                  <a href="/" className="hover:underline">
+                    About Us
+                  </a>
+                </li>
+                <li>
+                  <a href="/faq" className="hover:underline">
+                    FAQ
+                  </a>
+                </li>
+                <li>
                   <a href="/policies/privacy-policy" className="hover:underline">
                     Privacy Policy
                   </a>
