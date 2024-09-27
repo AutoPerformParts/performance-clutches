@@ -1,6 +1,7 @@
 import {json, type LoaderFunctionArgs} from '@shopify/remix-oxygen';
 import {Link, useLoaderData, type MetaFunction} from '@remix-run/react';
 import {type Shop} from '@shopify/hydrogen/storefront-api-types';
+import styles from '../styles/policies.css'
 
 type SelectedPolicies = keyof Pick<
   Shop,
@@ -10,6 +11,11 @@ type SelectedPolicies = keyof Pick<
 export const meta: MetaFunction<typeof loader> = ({data}) => {
   return [{title: `Hydrogen | ${data?.policy.title ?? ''}`}];
 };
+
+export const links = () => [
+  { rel: "stylesheet", href: styles }
+];
+
 
 export async function loader({params, context}: LoaderFunctionArgs) {
   if (!params.handle) {
@@ -45,15 +51,12 @@ export default function Policy() {
   const {policy} = useLoaderData<typeof loader>();
 
   return (
-    <div className="policy">
-      <br />
-      <br />
-      <div>
-        <Link to="/policies">← Back to Policies</Link>
+    <div className="policy container xl mx-auto">
+      <div className='p-4'>
+        <h1 className='text-3xl font-bold'>{policy.title}</h1>
+        <br />
+        <div dangerouslySetInnerHTML={{__html: policy.body}} />
       </div>
-      <br />
-      <h1>{policy.title}</h1>
-      <div dangerouslySetInnerHTML={{__html: policy.body}} />
     </div>
   );
 }

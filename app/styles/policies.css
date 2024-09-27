@@ -1,0 +1,12 @@
+h1 {
+	font-weight: bold;
+	font-size: 20px;
+	margin-top: 10px
+}
+
+ul {
+	margin-top: 5px;
+}
+li:has(strong){
+	padding-left: 5px;
+}
