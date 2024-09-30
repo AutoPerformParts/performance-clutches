@@ -77,7 +77,7 @@ function FooterMenu({
               </h2>
               <ul className="text-gray-600 dark:text-gray-400">
                 <li>
-                  <a href="/" className="hover:underline">
+                  <a href="/about" className="hover:underline">
                     About Us
                   </a>
                 </li>
