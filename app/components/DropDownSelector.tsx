@@ -8,6 +8,7 @@ interface IProps {
   isOpen: boolean;
   step: number;
   title: string;
+  placeHolder?: string;
   onChange: () => void;
 }
 
@@ -17,7 +18,8 @@ export default function DropDownSelector({
   isOpen,
   onChange,
   step,
-  title
+  title,
+  placeHolder
 }: IProps) {
   
   return (
@@ -33,7 +35,7 @@ export default function DropDownSelector({
           className="flex justify-between items-center border-2 border-[#3D404233] rounded-lg py-4 px-4"
           onClick={onChange}
         >
-          <div className="text-lg">{value ? value : 'Empty'}</div>
+          <div className={`text-lg ${!value ? 'text-gray-500 italic' : ''}`}>{value ? value : placeHolder} </div>
           <ChevronIcon className={isOpen ? 'rotate-180' : ''} />
         </div>
         {isOpen && (

@@ -40,6 +40,7 @@ export function CarDropDownSelectorDesignation({
       isOpen={isOpen}
       title='Select an Option'
       onChange={handleOpenChange}
+      placeHolder='1.4 TSi'
     >
       <>
         {searchClient && (

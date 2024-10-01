@@ -42,6 +42,7 @@ export function CarDropDownSelectorModel({
       isOpen={isOpen}
       title='Select a Model'
       onChange={handleOpenChange}
+      placeHolder='A3 Sportback'
     >
       <>
         {searchClient && (

@@ -25,6 +25,7 @@ export default function CarDropSelectorMake({onClick, values}: IProps) {
         step={1}
         title='Select a Manufacturer'
         onChange={handleOpenChange}
+        placeHolder='Audi'
       >
         <>
           {manufacturers.map((e, index: number) => (
