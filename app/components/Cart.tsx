@@ -5,6 +5,7 @@ import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
 import {CarSelector} from './car-selector';
 import {Padding} from './padding';
+import {memo, useMemo} from 'react';
 
 type CartLine = CartApiQueryFragment['lines']['nodes'][0];
 
@@ -12,6 +13,10 @@ type CartMainProps = {
   cart: CartApiQueryFragment | null;
   layout: 'page' | 'aside';
 };
+
+// Memoize components that don't need frequent updates
+const MemoizedCartLineItem = memo(CartLineItem);
+const MemoizedCartEmpty = memo(CartEmpty);
 
 export function CartMain({layout, cart}: CartMainProps) {
   const linesCount = Boolean(cart?.lines?.nodes?.length || 0);
@@ -22,15 +27,17 @@ export function CartMain({layout, cart}: CartMainProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-2">
-      <CartEmpty hidden={linesCount} layout={layout} />
+      <MemoizedCartEmpty hidden={linesCount} layout={layout} />
       <CartDetails cart={cart} layout={layout} />
     </div>
   );
 }
 
 function CartDetails({layout, cart}: CartMainProps) {
-  const cartHasItems = !!cart && cart.totalQuantity > 0;
-
+  const cartHasItems = useMemo(
+    () => !!cart && cart.totalQuantity > 0,
+    [cart?.totalQuantity],
+  );
   return (
     <>
       <div className="lg:col-span-2">
@@ -40,7 +47,7 @@ function CartDetails({layout, cart}: CartMainProps) {
       </div>
 
       <div className="bg-white dark:bg-slate-100 rounded shadow-md">
-        {cartHasItems && (
+        {cartHasItems && cart && (
           <CartSummary cost={cart.cost} layout={layout}>
             <CartDiscounts discountCodes={cart.discountCodes} />
             <CartCheckoutActions checkoutUrl={cart.checkoutUrl} />
@@ -64,7 +71,7 @@ function CartLines({
     <div aria-labelledby="cart-lines">
       <ul>
         {lines.nodes.map((line) => (
-          <CartLineItem key={line.id} line={line} layout={layout} />
+          <MemoizedCartLineItem key={line.id} line={line} layout={layout} />
         ))}
       </ul>
     </div>
