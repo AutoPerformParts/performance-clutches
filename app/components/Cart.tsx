@@ -5,7 +5,8 @@ import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
 import {CarSelector} from './car-selector';
 import {Padding} from './padding';
-import {memo, useMemo} from 'react';
+import {memo, useEffect, useMemo, useState} from 'react';
+import Spinner from './icons/Spinner';
 
 type CartLine = CartApiQueryFragment['lines']['nodes'][0];
 
@@ -188,10 +189,22 @@ function CartLineQuantity({line}: {line: CartLine}) {
   const {id: lineId, quantity} = line;
   const prevQuantity = Number(Math.max(0, quantity - 1).toFixed(0));
   const nextQuantity = Number((quantity + 1).toFixed(0));
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, [quantity]);
 
   return (
     <div className="flex items-center gap-6 p-3">
-      <p>Quantity: {quantity}</p>
+      <div className="flex items-center gap-2">
+        <span>Quantity:</span>
+        {isLoading ? (
+            <Spinner />
+        ) : (
+          <span>{quantity}</span>
+        )}
+      </div>
       <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
         <button
           aria-label="Decrease quantity"
@@ -199,8 +212,9 @@ function CartLineQuantity({line}: {line: CartLine}) {
           name="decrease-quantity"
           value={prevQuantity}
           className="text-3xl"
+          onClick={() => setIsLoading(true)}
         >
-          <span>&#8722; </span>
+          <span>&#8722;</span>
         </button>
       </CartLineUpdateButton>
       <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
@@ -209,6 +223,7 @@ function CartLineQuantity({line}: {line: CartLine}) {
           name="increase-quantity"
           value={nextQuantity}
           className="text-3xl"
+          onClick={() => setIsLoading(true)}
         >
           <span>&#43;</span>
         </button>
