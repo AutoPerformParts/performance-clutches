@@ -21,9 +21,30 @@ export default function DropDownSelector({
   title,
   placeHolder
 }: IProps) {
-  
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const onOutsideClick = () => {
+    if(isOpen) {
+      onChange()
+    }
+  }
+  const handleClickOutside = useCallback(
+    (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        onOutsideClick();
+      }
+    },
+    [onOutsideClick]
+  );
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [handleClickOutside]);
+
   return (
-    <div className='relative' >
+    <div ref={wrapperRef} className='relative' >
       <div className='flex gap-2 font-bold text-md font-titles'>
         <span className="flex gap-2 text-primary-600">
           Step {step} <MoveRight />
