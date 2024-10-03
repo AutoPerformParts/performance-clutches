@@ -141,7 +141,7 @@ export default function Product() {
   const {product, variants, productRecommendations} =
     useLoaderData<typeof loader>();
   const {selectedVariant, descriptionHtml} = product;
-  console.log('productRecommendations', productRecommendations);
+  
   return (
     <>
       <ProductBreadcrumb product={product} />
