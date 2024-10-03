@@ -13,8 +13,8 @@ export default function MoveRight() {
         <path
           d="M18 8L22 12M22 12L18 16M22 12H2"
           stroke="#0D6BFF"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </svg>
     </div>
