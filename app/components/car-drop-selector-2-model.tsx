@@ -1,16 +1,9 @@
 import {useContext, useEffect, useState} from 'react';
-import {
-  Configure,
-  InstantSearch,
-  useInstantSearch,
-  useMenu,
-} from 'react-instantsearch';
+import {Configure, Hits, InstantSearch} from 'react-instantsearch';
 import {Vehicle, VehicleContext} from './VehicleProvider';
-import {AlgoliaLogo} from './algolia-logo';
 import {SearchContext} from './search-provider';
-import ChevronIcon from './icons/ChevronIcon';
-import {MenuItem} from '@shopify/hydrogen/storefront-api-types';
 import DropDownSelector from './DropDownSelector';
+import {list} from 'postcss';
 
 export function CarDropDownSelectorModel({
   onClick,
@@ -34,31 +27,54 @@ export function CarDropDownSelectorModel({
     onClick('model', value);
     setIsOpen(false);
   };
+  const transformItems = (items: any[], {results}: any) => {
+    return items
+      .map((item, index) => ({
+        model: item.model,
+      }))
+      .filter(
+        (item, index, self) =>
+          index === self.findIndex((t) => t.model === item.model),
+      );
+  };
 
   return (
     <DropDownSelector
       step={2}
       value={model}
       isOpen={isOpen}
-      title='Select a Model'
+      title="Select a Model"
       onChange={handleOpenChange}
-      placeHolder='A3 Sportback'
+      placeHolder="A3 Sportback"
     >
       <>
         {searchClient && (
           <InstantSearch
+            searchClient={searchClient}
+            indexName="vehicles"
             future={{
               preserveSharedStateOnUnmount: true,
             }}
-            searchClient={searchClient}
-            indexName="vehicles"
           >
             <Configure
               analytics={false}
               filters={`make:'${make}'`}
-              hitsPerPage={40}
+              hitsPerPage={100}
             />
-            <MenuSelect attribute="model" onClick={handleSelect} />
+
+            <Hits
+              hitComponent={(props) => (
+                <Hit {...props} onClick={handleSelect} />
+              )}
+              //@ts-ignore
+              transformItems={transformItems}
+              classNames={{
+                list: 'flex flex-col bg-zinc-900  text-white',
+              }}
+              style={{
+                padding: 0,
+              }}
+            />
           </InstantSearch>
         )}
       </>
@@ -66,24 +82,18 @@ export function CarDropDownSelectorModel({
   );
 }
 
-export function MenuSelect(props: any) {
-  const {items} = useMenu(props);
-
+export function Hit({hit, ...props}: any) {
   return (
-    <>
-      {items.map((item, index) => (
-        <li
-          className="hover:bg-white hover:text-black"
-          key={index}
-          onClick={() => {
-            // refine(item.value);
-            props.onClick(item.label);
-          }}
-        >
-          {item.label}
-        </li>
-      ))}
-    </>
+    <div
+      className="hover:bg-white hover:text-black px-5 py-2.5"
+      key={hit}
+      onClick={() => {
+        // refine(item.value);
+        props.onClick(hit.model);
+      }}
+    >
+      {hit.model}
+    </div>
   );
 }
 

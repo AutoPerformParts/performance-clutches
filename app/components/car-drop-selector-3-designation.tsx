@@ -1,5 +1,5 @@
-  import {useContext, useEffect, useState} from 'react';
-import {Configure, InstantSearch, useMenu} from 'react-instantsearch';
+import {useContext, useEffect, useState} from 'react';
+import {Configure, Hits, InstantSearch} from 'react-instantsearch';
 import {Vehicle, VehicleContext} from './VehicleProvider';
 import {SearchContext} from './search-provider';
 import DropDownSelector from './DropDownSelector';
@@ -33,14 +33,25 @@ export function CarDropDownSelectorDesignation({
     setIsOpen(false);
   };
 
+  const transformItems = (items: any[], {results}: any) => {
+    return items
+      .map((item, index) => ({
+        designation: item.designation,
+      }))
+      .filter(
+        (item, index, self) =>
+          index === self.findIndex((t) => t.designation === item.designation),
+      );
+  };
+
   return (
     <DropDownSelector
       step={3}
       value={designation}
       isOpen={isOpen}
-      title='Select an Option'
+      title="Select an Option"
       onChange={handleOpenChange}
-      placeHolder='1.4 TSi'
+      placeHolder="1.4 TSi"
     >
       <>
         {searchClient && (
@@ -52,7 +63,19 @@ export function CarDropDownSelectorDesignation({
             indexName="vehicles"
           >
             <Configure analytics={false} filters={filters} hitsPerPage={40} />
-            <MenuSelect attribute="designation" onClick={handleSelect} />
+            <Hits
+              hitComponent={(props) => (
+                <Hit {...props} onClick={handleSelect} />
+              )}
+              //@ts-ignore
+              transformItems={transformItems}
+              classNames={{
+                list: 'flex flex-col bg-zinc-900  text-white',
+              }}
+              style={{
+                padding: 0,
+              }}
+            />
           </InstantSearch>
         )}
       </>
@@ -60,23 +83,17 @@ export function CarDropDownSelectorDesignation({
   );
 }
 
-export function MenuSelect(props: any) {
-  const {items} = useMenu(props);
-
+function Hit({hit, ...props}: any) {
   return (
-    <>
-      {items.map((item, index) => (
-        <li
-          className="hover:bg-white hover:text-black"
-          key={index}
-          onClick={() => {
-            // refine(item.value);
-            props.onClick(item.label);
-          }}
-        >
-          {item.label}
-        </li>
-      ))}
-    </>
+    <div
+      className="hover:bg-white hover:text-black px-5 py-2.5"
+      key={hit}
+      onClick={() => {
+        // refine(item.value);
+        props.onClick(hit.designation);
+      }}
+    >
+      {hit.designation}
+    </div>
   );
 }
