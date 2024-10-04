@@ -20,3 +20,70 @@ export function SearchProvider({children}: {children: ReactNode}) {
     <SearchContext.Provider value={state}>{children}</SearchContext.Provider>
   );
 }
+
+const headers = {
+  'X-Algolia-API-Key': ALGOLIA_KEY,
+  'X-Algolia-Application-Id': ALGOLIA_ID,
+  'Content-Type': 'application/json',
+};
+
+const url = `https://${ALGOLIA_ID}-dsn.algolia.net/1/indexes/vehicles/query`;
+
+export const fetchModels = async (make: string, model?: string) => {
+  let data = {
+    params: `filters=make:'${make}'&hitsPerPage=999&page=0`,
+  };
+
+  const allHits = [];
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(data),
+    });
+
+    if (response.ok) {
+      const jsonResponse: any = await response.json();
+      const totalPages = jsonResponse.nbPages || 1;
+
+      // Fetch all pages
+      for (let page = 0; page < totalPages; page++) {
+        data.params = `filters=make:'${make}'${
+          model ? ` AND model:'${model}'` : ''
+        }&hitsPerPage=999&page=${page}`;
+
+        const pageResponse = await fetch(url, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(data),
+        });
+
+        if (pageResponse.ok) {
+          const pageJson: any = await pageResponse.json();
+          const hits = pageJson.hits || [];
+          allHits.push(...hits);
+        } else {
+          console.error(
+            `Error: ${pageResponse.status}, ${await pageResponse.text()}`,
+          );
+          break;
+        }
+      }
+    } else {
+      console.error(
+        `Error retrieving data for ${make}: ${
+          response.status
+        }, ${await response.text()}`,
+      );
+    }
+  } catch (error) {
+    console.error(`Fetch error: ${error}`);
+  }
+  let unique;
+  if (!model) {
+    unique = new Set(allHits.map((hit) => hit.model));
+  } else {
+    unique = new Set(allHits.map((hit) => hit.designation));
+  }
+  return [...unique];
+};

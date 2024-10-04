@@ -2,8 +2,6 @@ import {Link} from '@remix-run/react';
 import {useContext} from 'react';
 import {Configure, Hits, InstantSearch} from 'react-instantsearch';
 import {VehicleContext} from './VehicleProvider';
-import {AlgoliaLogo} from './algolia-logo';
-import {MakeBackButton} from './car-selector-make-back-button';
 import {SearchContext} from './search-provider';
 
 function Hit({hit}: any) {
@@ -38,7 +36,7 @@ export function CarDropSelectorOptions({onReset}: {onReset: () => void}) {
             searchClient={searchClient}
             indexName="vehicles"
           >
-            <Configure analytics={false} filters={filters} />
+            <Configure analytics={false} filters={filters} hitsPerPage={100} />
             <Hits
               hitComponent={Hit}
               classNames={{
