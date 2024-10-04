@@ -35,7 +35,19 @@ export function CarDropDownSelectorModel({
       .filter(
         (item, index, self) =>
           index === self.findIndex((t) => t.model === item.model),
-      );
+      )
+      .sort((a, b) => {
+        // Check if both are numbers, compare them numerically
+        const numA = parseInt(a.model, 10);
+        const numB = parseInt(b.model, 10);
+
+        if (!isNaN(numA) && !isNaN(numB)) {
+          return numA - numB;
+        }
+
+        // Otherwise, compare as strings
+        return a.model.localeCompare(b.model, undefined, {numeric: true});
+      });
   };
 
   return (
