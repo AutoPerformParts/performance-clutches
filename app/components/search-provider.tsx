@@ -85,5 +85,5 @@ export const fetchModels = async (make: string, model?: string) => {
   } else {
     unique = new Set(allHits.map((hit) => hit.designation));
   }
-  return [...unique];
+  return [...unique].sort();
 };
