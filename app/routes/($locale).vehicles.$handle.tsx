@@ -2,7 +2,12 @@ import {Link, useLoaderData, type MetaFunction} from '@remix-run/react';
 import {json, redirect, type LoaderFunctionArgs} from '@shopify/remix-oxygen';
 import {useContext} from 'react';
 import {FaCheckCircle} from 'react-icons/fa';
-import {Configure, Hits, InstantSearch} from 'react-instantsearch';
+import {
+  Configure,
+  Hits,
+  InstantSearch,
+  useInstantSearch,
+} from 'react-instantsearch';
 import {CarSelector} from '~/components/car-selector';
 import {Container} from '~/components/container';
 import {ContainerContent} from '~/components/container-content';
@@ -38,6 +43,7 @@ export async function loader({request, params, context}: LoaderFunctionArgs) {
 export default function Vehicle() {
   const {vehicle, handle} = useLoaderData<typeof loader>();
   const searchClient = useContext(SearchContext);
+
   return (
     <>
       <div
@@ -96,12 +102,14 @@ export default function Vehicle() {
                     hitsPerPage={10}
                     query={vehicle.id.split('/').at(-1)}
                   />
-                  <Hits
-                    hitComponent={Hit}
-                    classNames={{
-                      list: 'grid grid-cols-1 sm:grid-cols-2 gap-4',
-                    }}
-                  />
+                  <NoResultsBoundary fallback={<NoResults />}>
+                    <Hits
+                      hitComponent={Hit}
+                      classNames={{
+                        list: 'grid grid-cols-1 sm:grid-cols-2 gap-4',
+                      }}
+                    />
+                  </NoResultsBoundary>
                 </InstantSearch>
               )}
             </div>
@@ -130,6 +138,35 @@ function Hit({hit}: any) {
         <p>{hit.description}</p>
       </div>
     </Link>
+  );
+}
+
+function NoResultsBoundary({children, fallback}: any) {
+  const {results} = useInstantSearch();
+
+  // The `__isArtificial` flag makes sure not to display the No Results message
+  // when no hits have been returned.
+  if (!results.__isArtificial && results.nbHits === 0) {
+    return (
+      <>
+        {fallback}
+        <div hidden>{children}</div>
+      </>
+    );
+  }
+
+  return children;
+}
+
+function NoResults() {
+  const {indexUiState} = useInstantSearch();
+
+  return (
+    <div>
+      <p className='font-titles font-bold uppercase text-4xl text-center'>
+        Coming soon...
+      </p>
+    </div>
   );
 }
 
