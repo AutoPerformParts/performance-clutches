@@ -141,7 +141,7 @@ export default function Product() {
   const {product, variants, productRecommendations} =
     useLoaderData<typeof loader>();
   const {selectedVariant, descriptionHtml} = product;
-  
+
   return (
     <>
       <ProductBreadcrumb product={product} />
@@ -168,22 +168,24 @@ export default function Product() {
                 variants={variants}
               />
               <ProductConfidence />
-              <div className="lg:fixed lg:w-5/12 lg:h-[150px] bottom-10 right-0">
-                <p className="font-titles uppercase font-bold text-3xl md:text-2xl py-1 lg:hidden">
+              <div className="lg:fixed lg:w-5/12 lg:h-[150px] bottom-0 right-0">
+                <p className="font-titles uppercase font-bold text-3xl md:text-2xl py-1">
                   People also buy
                 </p>
 
-                <div className="grid lg:grid-cols-2 bg-white gap-2">
+                <div className="grid lg:grid-cols-3 bg-white gap-2">
                   {productRecommendations &&
-                    productRecommendations.slice(0, 4).map((product, index) => (
+                    productRecommendations.slice(0, 3).map((product, index) => (
                       <Link
                         className="border shadow rounded p-3 hover:bg-slate-100 transition-all ease-in-out flex gap-5 lg:gap-2"
                         key={product.id}
                         prefetch="intent"
                         to={'#'}
+                        title={product.title}
                       >
+
                         {product.featuredImage && (
-                          <div className="lg:w-24 h-24 lg:h-16">
+                          <div className="h-24 lg:h-20 lg:w-20">
                             <Image
                               alt={
                                 product.featuredImage.altText || product.title
@@ -199,21 +201,23 @@ export default function Product() {
                           </div>
                         )}
                         <div>
-                          <h4 className="font-titles uppercase font-bold lg:text-xs py-1">
+                          <h4
+                            className={`font-titles uppercase  lg:text-xs py-1`}
+                          >
                             {product.title}
                           </h4>
-                          <div className="flex items-center gap-2">
-                            {product.availableForSale ? (
-                              <span className="text-lime-600 text-lg font-bold">
-                                In Stock
-                              </span>
-                            ) : (
-                              <span className="text-red-600 text-lg font-bold">
-                                Out of Stock
-                              </span>
-                            )}
-                            <small>
+                          <div className="flex lg:block items-center gap-2">
+                            <small className='flex gap-2 items-center'>
                               <Money data={product.variants.nodes[0].price} />
+                              {product.availableForSale ? (
+                                <span className="text-lime-600 lg:text-xs font-bold">
+                                  In Stock
+                                </span>
+                              ) : (
+                                <span className="text-red-600 lg:text-xs font-bold">
+                                  Out of Stock
+                                </span>
+                              )}
                             </small>
                           </div>
                         </div>
@@ -528,7 +532,7 @@ function ProductDetail({product}: {product: ProductFragment}) {
         },
         {
           key: 'Clamp Load',
-          value: <>{clamp_load?.value}</>,
+          value: <>{clamp_load?.value} N</>,
         },
         {
           key: 'Height',
