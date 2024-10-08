@@ -65,8 +65,27 @@ function FooterMenu({
                   <a
                     href="http://instagram.com/perform.clutch/"
                     className="hover:underline"
+                    target='_blank'
                   >
                     Instagram
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="http://linkedin.com/company/performance-clutches/"
+                    className="hover:underline"
+                    target='_blank'
+                  >
+                    LinkedIn
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="http://facebook.com/performanceclutch/"
+                    className="hover:underline"
+                    target='_blank'
+                  >
+                    Facebook
                   </a>
                 </li>
               </ul>
@@ -103,14 +122,20 @@ function FooterMenu({
                   </a>
                 </li>
                 <li>
-                  <Link
+                  {/* <Link
                     to={'/warranty-policy.docx'}
                     download="warranty-policy.docx"
                     target="_blank"
                     className="hover:underline"
                   >
                     Warranty &amp; Policy
-                  </Link>
+                  </Link> */}
+                  <a
+                    href="/warranty-policy"
+                    className="hover:underline"
+                  >
+                    Warranty &amp; Policy
+                  </a>
                 </li>
               </ul>
             </div>
