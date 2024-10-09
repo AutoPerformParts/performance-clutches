@@ -23,7 +23,7 @@ export default function CarDropSelectorMake({onClick, values}: IProps) {
         value={make}
         isOpen={isOpen}
         step={1}
-        title='Select a Manufacturer'
+        title='Make a selection'
         onChange={handleOpenChange}
         placeHolder='Audi'
       >

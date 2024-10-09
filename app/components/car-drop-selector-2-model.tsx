@@ -39,7 +39,7 @@ export function CarDropDownSelectorModel({
       step={2}
       value={model}
       isOpen={isOpen}
-      title="Select a Model"
+      title="Make a selection"
       onChange={handleOpenChange}
       placeHolder="A3 Sportback"
     >
