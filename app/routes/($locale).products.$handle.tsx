@@ -298,7 +298,7 @@ function ProductMain({
     <div className="p-3 shadow round-md border">
       <h1 className="font-titles uppercase font-bold text-2xl">{title}</h1>
       <p className="pb-4">by {product.vendor}</p>
-      <p className="pb-4">For {ap.join('and ')}</p>
+      <p className="pb-4">For {ap.join(' and ')}</p>
       <p className="pb-4">{seo.description}</p>
       <ProductPrice selectedVariant={selectedVariant} />
       <br />
