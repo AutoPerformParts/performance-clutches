@@ -27,9 +27,8 @@ const headers = {
   'Content-Type': 'application/json',
 };
 
-const url = `https://${ALGOLIA_ID}-dsn.algolia.net/1/indexes/vehicles/query`;
-
 export const fetchModels = async (make: string, model?: string) => {
+  const url = `https://${ALGOLIA_ID}-dsn.algolia.net/1/indexes/vehicles/query`;
   let data = {
     params: `filters=make:'${make}'&hitsPerPage=999&page=0`,
   };
@@ -86,4 +85,23 @@ export const fetchModels = async (make: string, model?: string) => {
     unique = new Set(allHits.map((hit) => hit.designation));
   }
   return [...unique].sort();
+};
+
+export const fetchProductCatalogue = async (query?: string) => {
+  if(!query) return;
+  // const query = vehicle.id.split('/').at(-1);
+  const response = await fetch(
+    `https://${ALGOLIA_ID}-dsn.algolia.net/1/indexes/products?hitsPerPage=10&query=${query}`,
+    {
+      headers: headers,
+    },
+  );
+
+  console.log('response',response)
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+
+  const data: any = await response.json();
+  return data.hits;
 };
