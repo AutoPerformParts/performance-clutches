@@ -1,6 +1,6 @@
 import {Link, useLoaderData, type MetaFunction} from '@remix-run/react';
 import {json, redirect, type LoaderFunctionArgs} from '@shopify/remix-oxygen';
-import {useContext} from 'react';
+import {useContext, useEffect} from 'react';
 import {FaCheckCircle} from 'react-icons/fa';
 import {
   Configure,
@@ -43,7 +43,13 @@ export async function loader({request, params, context}: LoaderFunctionArgs) {
 export default function Vehicle() {
   const {vehicle, handle} = useLoaderData<typeof loader>();
   const searchClient = useContext(SearchContext);
-
+  // const ctx = useContext(VehicleContext);
+  // const navigate = useNavigate();
+  // useEffect(() => {
+  //   if(!ctx.id) {
+  //     navigate("/");
+  //   }
+  // }, [ctx])
   return (
     <>
       <div

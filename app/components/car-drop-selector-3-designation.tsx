@@ -63,9 +63,9 @@ export function CarDropDownSelectorDesignation({
       step={3}
       value={designation}
       isOpen={isOpen}
-      title="Make a selection"
+      title="Select an Option"
       onChange={handleOpenChange}
-      placeHolder="1.4 TSi"
+      placeHolder="Make a selection"
     >
        {designations &&
         designations.map((designation, index) => (

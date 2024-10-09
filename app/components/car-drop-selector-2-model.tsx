@@ -39,9 +39,9 @@ export function CarDropDownSelectorModel({
       step={2}
       value={model}
       isOpen={isOpen}
-      title="Make a selection"
+      title="Select a Model"
       onChange={handleOpenChange}
-      placeHolder="A3 Sportback"
+      placeHolder="Make a selection"
     >
       {models &&
         models.map((model, index) => (
