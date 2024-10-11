@@ -80,28 +80,64 @@ export const fetchModels = async (make: string, model?: string) => {
   }
   let unique;
   if (!model) {
-    unique = new Set(allHits.map((hit) => hit.model));
+    unique = [...new Set(allHits.map((hit) => hit.model))];
   } else {
-    unique = new Set(allHits.map((hit) => hit.designation));
+    const activeVehicles = [];
+    for (const hit of allHits) {
+      const query = hit.objectID?.split('-').at(-1);
+      if (!query) {
+        continue;
+      }
+      try {
+        const response = await fetchProductCatalogue(query);
+        if (response.length) {
+          activeVehicles.push(hit);
+        }
+      } catch (err) {
+        await fetch(
+          'https://hook.us1.make.com/cv1oe4xn88yi261g0efvvkifhc5rypk4',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              errCode: 'Too much requests',
+              errMessage: err,
+            }),
+          },
+        );
+      }
+    }
+    unique = [...new Set(activeVehicles.map((hit) => hit.designation))];
   }
-  return [...unique].sort();
+  return unique.sort();
 };
 
 export const fetchProductCatalogue = async (query?: string) => {
-  if(!query) return;
-  // const query = vehicle.id.split('/').at(-1);
-  const response = await fetch(
-    `https://${ALGOLIA_ID}-dsn.algolia.net/1/indexes/products?hitsPerPage=10&query=${query}`,
-    {
-      headers: headers,
-    },
-  );
+  if (!query) return;
+  try {
+    // const query = vehicle.id.split('/').at(-1);
+    const response = await fetch(
+      `https://${ALGOLIA_ID}-dsn.algolia.net/1/indexes/products?hitsPerPage=10&query=${query}`,
+      {
+        headers: headers,
+      },
+    );
+    
+    if (response.status == 429) {
+      throw new Error('Too many request');
+    }
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
 
-  console.log('response',response)
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
+    const data: any = await response.json();
+    return data.hits;
+  } catch (err) {
+    await fetch('https://hook.us1.make.com/cv1oe4xn88yi261g0efvvkifhc5rypk4', {
+      method: 'POST',
+      body: JSON.stringify({
+        errCode: 'Too much requests',
+        errMessage: err,
+      }),
+    });
   }
-
-  const data: any = await response.json();
-  return data.hits;
 };
