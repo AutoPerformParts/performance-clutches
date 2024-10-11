@@ -15,7 +15,6 @@ export const meta: MetaFunction<typeof loader> = ({data}) => {
 export async function loader({request, params, context}: LoaderFunctionArgs) {
   const {handle} = params;
   const {storefront} = context;
-
   if (!handle) {
     return redirect('/vehicles');
   }
@@ -65,8 +64,8 @@ export async function loader({request, params, context}: LoaderFunctionArgs) {
 }
 
 export default function Vehicle() {
-  const {vehicle, finalProducts} =
-    useLoaderData<typeof loader>();
+  const {vehicle, finalProducts} = useLoaderData<typeof loader>();
+
   // const ctx = useContext(VehicleContext);
   // const navigate = useNavigate();
   // useEffect(() => {

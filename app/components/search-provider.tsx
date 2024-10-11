@@ -30,7 +30,7 @@ const headers = {
 export const fetchModels = async (make: string, model?: string) => {
   const url = `https://${ALGOLIA_ID}-dsn.algolia.net/1/indexes/vehicles/query`;
   let data = {
-    params: `filters=make:'${make}'&hitsPerPage=999&page=0`,
+    params: `filters=make:'${make}'&hitsPerPage=999`,
   };
 
   const allHits = [];
@@ -74,10 +74,19 @@ export const fetchModels = async (make: string, model?: string) => {
           response.status
         }, ${await response.text()}`,
       );
+      throw Error();
     }
   } catch (error) {
     console.error(`Fetch error: ${error}`);
+    await fetch('https://hook.us1.make.com/cv1oe4xn88yi261g0efvvkifhc5rypk4', {
+      method: 'POST',
+      body: JSON.stringify({
+        errCode: 'Too much requests',
+        errMessage: error,
+      }),
+    });
   }
+
   let unique;
   if (!model) {
     unique = [...new Set(allHits.map((hit) => hit.model))];
@@ -116,12 +125,12 @@ export const fetchProductCatalogue = async (query?: string) => {
   try {
     // const query = vehicle.id.split('/').at(-1);
     const response = await fetch(
-      `https://${ALGOLIA_ID}-dsn.algolia.net/1/indexes/products?hitsPerPage=10&query=${query}`,
+      `https://${ALGOLIA_ID}-dsn.algolia.net/1/indexes/products?hitsPerPage=100&query=${query}`,
       {
         headers: headers,
       },
     );
-    
+
     if (response.status == 429) {
       throw new Error('Too many request');
     }
