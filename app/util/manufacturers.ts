@@ -105,14 +105,14 @@ export const manufacturers = [
     description:
       "Hailing from the land of the rising sun, Honda has become a global symbol of precision craftsmanship and reliability. Renowned for its fuel-efficient and durable vehicles, Honda's lineup, from the Civic to the Accord, reflects a commitment to innovation and a driving experience that transcends borders. With a focus on sustainability and cutting-edge technology, Honda has earned its place among the world's automotive elite.",
   },
-  {
-    slug: 'hyundai',
-    group: 2,
-    title: 'Hyundai',
-    subtitle: 'Elevating Driving Experiences Globally',
-    description:
-      'Emerging from South Korea, Hyundai has rapidly transformed from a regional player to a global automotive force. With a focus on design, affordability, and cutting-edge technology, Hyundai has won the hearts of drivers worldwide. From the compact and stylish Hyundai Kona to the luxurious Palisade, the brand stands as a testament to its commitment to delivering elevated driving experiences for all.',
-  },
+  // {
+  //   slug: 'hyundai',
+  //   group: 2,
+  //   title: 'Hyundai',
+  //   subtitle: 'Elevating Driving Experiences Globally',
+  //   description:
+  //     'Emerging from South Korea, Hyundai has rapidly transformed from a regional player to a global automotive force. With a focus on design, affordability, and cutting-edge technology, Hyundai has won the hearts of drivers worldwide. From the compact and stylish Hyundai Kona to the luxurious Palisade, the brand stands as a testament to its commitment to delivering elevated driving experiences for all.',
+  // },
   {
     slug: 'infiniti',
     group: 2,

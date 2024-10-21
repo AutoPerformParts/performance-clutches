@@ -23,6 +23,7 @@ import {Suspense} from 'react';
 import {FaCheckCircle, FaChevronRight} from 'react-icons/fa';
 import type {
   ProductFragment,
+  ProductRecommendationsQuery,
   ProductVariantFragment,
   ProductVariantsQuery,
 } from 'storefrontapi.generated';
@@ -90,7 +91,17 @@ export async function loader({params, request, context}: LoaderFunctionArgs) {
     variables: {handle},
   });
 
-  return defer({product, variants});
+  // Fetch the product recommendations here
+  const {productRecommendations} = await storefront.query(
+    PRODUCT_RECOMMENDATIONS_QUERY,
+    {
+      variables: {
+        productId: product.id,
+      },
+    },
+  );
+
+  return defer({product, variants, productRecommendations});
 }
 
 function redirectToFirstVariant({
@@ -127,7 +138,8 @@ function redirectToFirstVariant({
 */
 
 export default function Product() {
-  const {product, variants} = useLoaderData<typeof loader>();
+  const {product, variants, productRecommendations} =
+    useLoaderData<typeof loader>();
   const {selectedVariant, descriptionHtml} = product;
 
   return (
@@ -149,18 +161,84 @@ export default function Product() {
               </div>
             </div>
 
-            <div className="md:col-span-2">
+            <div className="relative md:col-span-2">
               <ProductMain
                 selectedVariant={selectedVariant}
                 product={product}
                 variants={variants}
               />
               <ProductConfidence />
+              <div className="lg:fixed lg:w-5/12 lg:h-[150px] bottom-0 right-0">
+                <p className="font-titles uppercase font-bold text-3xl md:text-2xl py-1">
+                  People also buy
+                </p>
+
+                <div className="grid lg:grid-cols-3 bg-white gap-2">
+                  {productRecommendations &&
+                    productRecommendations.slice(0, 3).map((product, index) => (
+                      <Link
+                        className="border shadow rounded p-3 hover:bg-slate-100 transition-all ease-in-out flex gap-5 lg:gap-2"
+                        key={product.id}
+                        prefetch="intent"
+                        to={'#'}
+                        title={product.title}
+                      >
+
+                        {product.featuredImage && (
+                          <div className="h-24 lg:h-20 lg:w-20">
+                            <Image
+                              alt={
+                                product.featuredImage.altText || product.title
+                              }
+                              data={product.featuredImage}
+                              className="object-contain h-full"
+                              style={{
+                                width: 'auto',
+                              }}
+
+                              // sizes="(min-width: 45em) 400px, 100vw"
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <h4
+                            className={`font-titles uppercase  lg:text-xs py-1`}
+                          >
+                            {product.title}
+                          </h4>
+                          <div className="flex lg:block items-center gap-2">
+                            <small className='flex gap-2 items-center'>
+                              <Money data={product.variants.nodes[0].price} />
+                              {product.availableForSale ? (
+                                <span className="text-lime-600 lg:text-xs font-bold">
+                                  In Stock
+                                </span>
+                              ) : (
+                                <span className="text-red-600 lg:text-xs font-bold">
+                                  Out of Stock
+                                </span>
+                              )}
+                            </small>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                </div>
+              </div>
+              {/* <ProductRecommendations products={productRecommendations} /> */}
             </div>
           </div>
         </ContainerContent>
       </Container>
     </>
+  );
+}
+
+function ProductRecommendations({products}: {products: any[]}) {
+  return (
+    <div className="lg:fixed bg-black w-5/12 h-40 bottom-0 right-0">
+      {products && products.map((product) => <div>{product}</div>)}
+    </div>
   );
 }
 
@@ -220,7 +298,7 @@ function ProductMain({
     <div className="p-3 shadow round-md border">
       <h1 className="font-titles uppercase font-bold text-2xl">{title}</h1>
       <p className="pb-4">by {product.vendor}</p>
-      <p className="pb-4">For {ap.join('and ')}</p>
+      <p className="pb-4">For {ap.join(' and ')}</p>
       <p className="pb-4">{seo.description}</p>
       <ProductPrice selectedVariant={selectedVariant} />
       <br />
@@ -454,7 +532,7 @@ function ProductDetail({product}: {product: ProductFragment}) {
         },
         {
           key: 'Clamp Load',
-          value: <>{clamp_load?.value}</>,
+          value: <>{clamp_load?.value} N</>,
         },
         {
           key: 'Height',
@@ -635,6 +713,34 @@ const PRODUCT_FRAGMENT = `#graphql
     }
   }
   ${PRODUCT_VARIANT_FRAGMENT}
+` as const;
+
+const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
+  query ProductRecommendations(
+    $productId: ID!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    productRecommendations(productId: $productId) {
+      id
+      title
+      handle
+      availableForSale
+      featuredImage {
+        url
+        altText
+      }
+      variants(first: 1) {
+        nodes {
+          id
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
 ` as const;
 
 const PRODUCT_QUERY = `#graphql

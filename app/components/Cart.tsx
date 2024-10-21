@@ -5,6 +5,8 @@ import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
 import {CarSelector} from './car-selector';
 import {Padding} from './padding';
+import {memo, useEffect, useMemo, useState} from 'react';
+import Spinner from './icons/Spinner';
 
 type CartLine = CartApiQueryFragment['lines']['nodes'][0];
 
@@ -12,6 +14,10 @@ type CartMainProps = {
   cart: CartApiQueryFragment | null;
   layout: 'page' | 'aside';
 };
+
+// Memoize components that don't need frequent updates
+const MemoizedCartLineItem = memo(CartLineItem);
+const MemoizedCartEmpty = memo(CartEmpty);
 
 export function CartMain({layout, cart}: CartMainProps) {
   const linesCount = Boolean(cart?.lines?.nodes?.length || 0);
@@ -22,15 +28,17 @@ export function CartMain({layout, cart}: CartMainProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-2">
-      <CartEmpty hidden={linesCount} layout={layout} />
+      <MemoizedCartEmpty hidden={linesCount} layout={layout} />
       <CartDetails cart={cart} layout={layout} />
     </div>
   );
 }
 
 function CartDetails({layout, cart}: CartMainProps) {
-  const cartHasItems = !!cart && cart.totalQuantity > 0;
-
+  const cartHasItems = useMemo(
+    () => !!cart && cart.totalQuantity > 0,
+    [cart?.totalQuantity],
+  );
   return (
     <>
       <div className="lg:col-span-2">
@@ -40,7 +48,7 @@ function CartDetails({layout, cart}: CartMainProps) {
       </div>
 
       <div className="bg-white dark:bg-slate-100 rounded shadow-md">
-        {cartHasItems && (
+        {cartHasItems && cart && (
           <CartSummary cost={cart.cost} layout={layout}>
             <CartDiscounts discountCodes={cart.discountCodes} />
             <CartCheckoutActions checkoutUrl={cart.checkoutUrl} />
@@ -64,7 +72,7 @@ function CartLines({
     <div aria-labelledby="cart-lines">
       <ul>
         {lines.nodes.map((line) => (
-          <CartLineItem key={line.id} line={line} layout={layout} />
+          <MemoizedCartLineItem key={line.id} line={line} layout={layout} />
         ))}
       </ul>
     </div>
@@ -181,10 +189,22 @@ function CartLineQuantity({line}: {line: CartLine}) {
   const {id: lineId, quantity} = line;
   const prevQuantity = Number(Math.max(0, quantity - 1).toFixed(0));
   const nextQuantity = Number((quantity + 1).toFixed(0));
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, [quantity]);
 
   return (
     <div className="flex items-center gap-6 p-3">
-      <p>Quantity: {quantity}</p>
+      <div className="flex items-center gap-2">
+        <span>Quantity:</span>
+        {isLoading ? (
+            <Spinner />
+        ) : (
+          <span>{quantity}</span>
+        )}
+      </div>
       <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
         <button
           aria-label="Decrease quantity"
@@ -192,8 +212,9 @@ function CartLineQuantity({line}: {line: CartLine}) {
           name="decrease-quantity"
           value={prevQuantity}
           className="text-3xl"
+          onClick={() => setIsLoading(true)}
         >
-          <span>&#8722; </span>
+          <span>&#8722;</span>
         </button>
       </CartLineUpdateButton>
       <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
@@ -202,6 +223,7 @@ function CartLineQuantity({line}: {line: CartLine}) {
           name="increase-quantity"
           value={nextQuantity}
           className="text-3xl"
+          onClick={() => setIsLoading(true)}
         >
           <span>&#43;</span>
         </button>

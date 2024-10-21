@@ -1,12 +1,12 @@
 import {Link, useLoaderData, type MetaFunction} from '@remix-run/react';
-import {json, redirect, type LoaderFunctionArgs} from '@shopify/remix-oxygen';
-import {useContext} from 'react';
+import {getSelectedProductOptions} from '@shopify/hydrogen';
+import {defer, redirect, type LoaderFunctionArgs} from '@shopify/remix-oxygen';
 import {FaCheckCircle} from 'react-icons/fa';
-import {Configure, Hits, InstantSearch} from 'react-instantsearch';
+import {useInstantSearch} from 'react-instantsearch';
 import {CarSelector} from '~/components/car-selector';
 import {Container} from '~/components/container';
 import {ContainerContent} from '~/components/container-content';
-import {SearchContext} from '~/components/search-provider';
+import {fetchProductCatalogue} from '~/components/search-provider';
 
 export const meta: MetaFunction<typeof loader> = ({data}) => {
   return [{title: `Vehicles | ${data?.vehicle?.id ?? ''} Collection`}];
@@ -15,7 +15,6 @@ export const meta: MetaFunction<typeof loader> = ({data}) => {
 export async function loader({request, params, context}: LoaderFunctionArgs) {
   const {handle} = params;
   const {storefront} = context;
-
   if (!handle) {
     return redirect('/vehicles');
   }
@@ -32,12 +31,49 @@ export async function loader({request, params, context}: LoaderFunctionArgs) {
       status: 404,
     });
   }
-  return json({vehicle, handle});
+  const products = await fetchProductCatalogue(vehicle.id.split('/').at(-1));
+  const finalProducts = [];
+  if (products) {
+    for (const element of products) {
+      const handle = element.handle;
+      const selectedOptions = getSelectedProductOptions(request).filter(
+        (option) =>
+          // Filter out Shopify predictive search query params
+          !option.name.startsWith('_sid') &&
+          !option.name.startsWith('_pos') &&
+          !option.name.startsWith('_psq') &&
+          !option.name.startsWith('_ss') &&
+          !option.name.startsWith('_v') &&
+          // Filter out third party tracking params
+          !option.name.startsWith('fbclid'),
+      );
+
+      if (!handle || typeof handle !== 'string' || handle === '') {
+        throw new Error('Expected product handle to be defined');
+      }
+
+      // await the query for the critical product data
+      const {product} = await storefront.query(PRODUCT_QUERY, {
+        variables: {handle, selectedOptions},
+      });
+      finalProducts.push(product);
+    }
+  }
+
+  return defer({vehicle, handle, products, finalProducts});
 }
 
 export default function Vehicle() {
-  const {vehicle, handle} = useLoaderData<typeof loader>();
-  const searchClient = useContext(SearchContext);
+  const {vehicle, finalProducts} = useLoaderData<typeof loader>();
+
+  // const ctx = useContext(VehicleContext);
+  // const navigate = useNavigate();
+  // useEffect(() => {
+  //   if(!ctx.id) {
+  //     navigate("/");
+  //   }
+  // }, [ctx])
+
   return (
     <>
       <div
@@ -84,26 +120,20 @@ export default function Vehicle() {
               </table>
             </div>
             <div className="md:col-span-3">
-              {searchClient && (
-                <InstantSearch
-                  future={{
-                    preserveSharedStateOnUnmount: true,
-                  }}
-                  searchClient={searchClient}
-                  indexName="products"
-                >
-                  <Configure
-                    hitsPerPage={10}
-                    query={vehicle.id.split('/').at(-1)}
-                  />
-                  <Hits
-                    hitComponent={Hit}
-                    classNames={{
-                      list: 'grid grid-cols-1 sm:grid-cols-2 gap-4',
-                    }}
-                  />
-                </InstantSearch>
-              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {finalProducts &&
+                  finalProducts.map((product) => (
+                    <Hit
+                      hit={{
+                        handle: product.handle,
+                        imageURL: product?.variants?.nodes?.at(0).image.url,
+                        title: product.title,
+                        description: product.seo.description,
+                        qty: product?.variants?.nodes?.at(0).availableForSale,
+                      }}
+                    />
+                  ))}
+              </div>
             </div>
           </div>
         </ContainerContent>
@@ -119,7 +149,7 @@ function Hit({hit}: any) {
         <img src={hit.imageURL} alt={hit.title} className="w-full" />
         <h2 className="font-titles uppercase font-bold">{hit.title}</h2>
         <div className="py-2">
-          {hit.qty > 0 ? (
+          {hit.qty ? (
             <strong className="text-lime-600 flex gap-1 items-center">
               <FaCheckCircle className="text-lime-600" /> In Stock
             </strong>
@@ -130,6 +160,35 @@ function Hit({hit}: any) {
         <p>{hit.description}</p>
       </div>
     </Link>
+  );
+}
+
+function NoResultsBoundary({children, fallback}: any) {
+  const {results} = useInstantSearch();
+
+  // The `__isArtificial` flag makes sure not to display the No Results message
+  // when no hits have been returned.
+  if (!results.__isArtificial && results.nbHits === 0) {
+    return (
+      <>
+        {fallback}
+        <div hidden>{children}</div>
+      </>
+    );
+  }
+
+  return children;
+}
+
+function NoResults() {
+  const {indexUiState} = useInstantSearch();
+
+  return (
+    <div>
+      <p className="font-titles font-bold uppercase text-4xl text-center">
+        Coming soon...
+      </p>
+    </div>
   );
 }
 
@@ -149,6 +208,86 @@ const VEHICLE_QUERY = `#graphql
       }
     }
   }
+` as const;
+
+const PRODUCT_VARIANT_FRAGMENT = `#graphql
+  fragment ProductVariant on ProductVariant {
+    availableForSale
+    currentlyNotInStock
+    compareAtPrice {
+      amount
+      currencyCode
+    }
+    id
+    image {
+      __typename
+      id
+      url
+      altText
+      width
+      height
+    }
+    price {
+      amount
+      currencyCode
+    }
+    product {
+      title
+      handle
+    }
+    selectedOptions {
+      name
+      value
+    }
+    sku
+    title
+    unitPrice {
+      amount
+      currencyCode
+    }
+  }
+` as const;
+
+const PRODUCT_FRAGMENT = `#graphql
+  fragment Product on Product {
+    id
+    title
+    vendor
+    handle
+    descriptionHtml
+    description
+    options {
+      name
+      values
+    }
+    selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {
+      ...ProductVariant
+    }
+    variants(first: 1) {
+      nodes {
+        ...ProductVariant
+      }
+    }
+    seo {
+      description
+      title
+    }
+  }
+  ${PRODUCT_VARIANT_FRAGMENT}
+` as const;
+
+const PRODUCT_QUERY = `#graphql
+  query Product(
+    $country: CountryCode
+    $handle: String!
+    $language: LanguageCode
+    $selectedOptions: [SelectedOptionInput!]!
+  ) @inContext(country: $country, language: $language) {
+    product(handle: $handle) {
+      ...Product
+    }
+  }
+  ${PRODUCT_FRAGMENT}
 ` as const;
 
 /*

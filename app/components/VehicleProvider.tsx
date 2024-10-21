@@ -1,3 +1,4 @@
+import {useLocation} from 'react-router-dom';
 import {ReactNode, createContext, useEffect, useState} from 'react';
 
 export interface Vehicle {
@@ -35,10 +36,13 @@ function getSavedState() {
 
 export function VehicleProvider({children}: {children: ReactNode}) {
   const [state, setLocalState] = useState(defaultVehicleState);
-
+  const location = useLocation();
   useEffect(() => {
-    setLocalState(getSavedState());
-  }, []);
+    if (location.pathname.includes('/vehicles/'))
+      setLocalState(getSavedState());
+    if (location.pathname === '/')
+      setLocalState({make: null, model: null, designation: null, id: null});
+  }, [location.pathname]);
 
   const setState = (v?: Vehicle) => {
     if (!v) return;

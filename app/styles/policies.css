@@ -1,0 +1,48 @@
+/* Heading Styles */
+h1 {
+  font-weight: bold;
+  font-size: 25px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+h3 {
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 25px;
+  margin-bottom: 10px;
+}
+
+/* Paragraph and Text Spacing */
+p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  padding-left: 5px;
+}
+
+/* List Styles */
+ul {
+  margin-top: 10px;
+  padding-left: 20px; /* Add padding for better indentation */
+}
+
+li {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+li strong {
+  font-weight: bold;
+}
+
+li:has(strong) {
+  padding-left: 5px; /* Apply padding only when <strong> is present */
+}

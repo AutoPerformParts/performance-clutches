@@ -35,11 +35,13 @@ export default function Homepage() {
           backgroundSize: 'cover',
         }}
       >
-        <Container>
-          <ContainerContent>
-            <CarSelector />
-          </ContainerContent>
-        </Container>
+        <div className="relative z-40">
+          <Container>
+            <ContainerContent>
+              <CarSelector />
+            </ContainerContent>
+          </Container>
+        </div>
       </div>
       <Container>
         <ContainerContent>

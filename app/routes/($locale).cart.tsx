@@ -10,80 +10,115 @@ export const meta: MetaFunction = () => {
   return [{title: `Performance Clutch Cart`}];
 };
 
+const actionHandlers = {
+  async handleLinesAdd(cart: any, inputs: any): Promise<CartQueryDataReturn> {
+    return await cart.addLines(inputs.lines);
+  },
+
+  async handleLinesUpdate(cart: any, inputs: any): Promise<CartQueryDataReturn> {
+    return await cart.updateLines(inputs.lines);
+  },
+
+  async handleLinesRemove(cart: any, inputs: any): Promise<CartQueryDataReturn> {
+    return await cart.removeLines(inputs.lineIds);
+  },
+
+  async handleDiscountCodesUpdate(cart: any, inputs: any): Promise<CartQueryDataReturn> {
+    const formDiscountCode = inputs.discountCode;
+    const discountCodes = (formDiscountCode ? [formDiscountCode] : []) as string[];
+    discountCodes.push(...inputs.discountCodes);
+    return await cart.updateDiscountCodes(discountCodes);
+  },
+
+  async handleBuyerIdentityUpdate(
+    cart: any,
+    inputs: any,
+    customerAccessToken: string
+  ): Promise<CartQueryDataReturn> {
+    return await cart.updateBuyerIdentity({
+      ...inputs.buyerIdentity,
+      customerAccessToken,
+    });
+  },
+};
+
 export async function action({request, context}: ActionFunctionArgs) {
-  const {cart} = context;
+  try {
+    const {cart} = context;
 
-  const [formData, customerAccessToken] = await Promise.all([
-    request.formData(),
-    await context.customerAccount.getAccessToken(),
-  ]);
+    // Parallel fetch of form data and access token
+    const [formData, customerAccessToken] = await Promise.all([
+      request.formData(),
+      context.customerAccount.getAccessToken(),
+    ]);
 
-  const {action, inputs} = CartForm.getFormInput(formData);
+    const {action, inputs} = CartForm.getFormInput(formData);
 
-  if (!action) {
-    throw new Error('No action provided');
-  }
-
-  let status = 200;
-  let result: CartQueryDataReturn;
-
-  switch (action) {
-    case CartForm.ACTIONS.LinesAdd:
-      result = await cart.addLines(inputs.lines);
-      break;
-    case CartForm.ACTIONS.LinesUpdate:
-      result = await cart.updateLines(inputs.lines);
-      break;
-    case CartForm.ACTIONS.LinesRemove:
-      result = await cart.removeLines(inputs.lineIds);
-      break;
-    case CartForm.ACTIONS.DiscountCodesUpdate: {
-      const formDiscountCode = inputs.discountCode;
-
-      // User inputted discount code
-      const discountCodes = (
-        formDiscountCode ? [formDiscountCode] : []
-      ) as string[];
-
-      // Combine discount codes already applied on cart
-      discountCodes.push(...inputs.discountCodes);
-
-      result = await cart.updateDiscountCodes(discountCodes);
-      break;
+    if (!action) {
+      throw new Error('No action provided');
     }
-    case CartForm.ACTIONS.BuyerIdentityUpdate: {
-      result = await cart.updateBuyerIdentity({
-        ...inputs.buyerIdentity,
-        customerAccessToken,
-      });
-      break;
+
+    let result: CartQueryDataReturn;
+
+    // Use action handlers map for cleaner code
+    switch (action) {
+      case CartForm.ACTIONS.LinesAdd:
+        result = await actionHandlers.handleLinesAdd(cart, inputs);
+        break;
+      case CartForm.ACTIONS.LinesUpdate:
+        result = await actionHandlers.handleLinesUpdate(cart, inputs);
+        break;
+      case CartForm.ACTIONS.LinesRemove:
+        result = await actionHandlers.handleLinesRemove(cart, inputs);
+        break;
+      case CartForm.ACTIONS.DiscountCodesUpdate:
+        result = await actionHandlers.handleDiscountCodesUpdate(cart, inputs);
+        break;
+      case CartForm.ACTIONS.BuyerIdentityUpdate:
+        result = await actionHandlers.handleBuyerIdentityUpdate(
+          cart,
+          inputs,
+          customerAccessToken as string
+        );
+        break;
+      default:
+        throw new Error(`${action} cart action is not defined`);
     }
-    default:
-      throw new Error(`${action} cart action is not defined`);
-  }
 
-  const cartId = result.cart.id;
-  const headers = cart.setCartId(result.cart.id);
-  const {cart: cartResult, errors} = result;
+    const {cart: cartResult, errors} = result;
+    const headers = cart.setCartId(cartResult.id);
 
-  const redirectTo = formData.get('redirectTo') ?? null;
-  if (typeof redirectTo === 'string') {
-    status = 303;
-    headers.set('Location', redirectTo);
-  }
+    // Handle redirect if present
+    const redirectTo = formData.get('redirectTo') ?? null;
+    const status = typeof redirectTo === 'string' ? 303 : 200;
+    
+    if (typeof redirectTo === 'string') {
+      headers.set('Location', redirectTo);
+    }
 
-  headers.append('Set-Cookie', await context.session.commit());
+    // Commit session
+    headers.append('Set-Cookie', await context.session.commit());
 
-  return json(
-    {
-      cart: cartResult,
-      errors,
-      analytics: {
-        cartId,
+    return json(
+      {
+        cart: cartResult,
+        errors,
+        analytics: {
+          cartId: cartResult.id,
+        },
       },
-    },
-    {status, headers},
-  );
+      {status, headers},
+    );
+  } catch (error) {
+    console.error('Cart action error:', error);
+    return json(
+      {
+        cart: null,
+        errors: ['An unexpected error occurred. Please try again.'],
+      },
+      {status: 500},
+    );
+  }
 }
 
 export default function Cart() {
