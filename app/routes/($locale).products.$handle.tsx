@@ -59,7 +59,6 @@ export async function loader({params, request, context}: LoaderFunctionArgs) {
   const {product} = await storefront.query(PRODUCT_QUERY, {
     variables: {handle, selectedOptions},
   });
-
   if (!product?.id) {
     throw new Response(null, {status: 404});
   }
@@ -91,17 +90,65 @@ export async function loader({params, request, context}: LoaderFunctionArgs) {
     variables: {handle},
   });
 
-  // Fetch the product recommendations here
-  const {productRecommendations} = await storefront.query(
-    PRODUCT_RECOMMENDATIONS_QUERY,
-    {
-      variables: {
-        productId: product.id,
-      },
-    },
-  );
+  let productRecommendations = [];
+  let componentProducts = [];
+  let recommendSkuProducts = [];
 
-  return defer({product, variants, productRecommendations});
+  try {
+    const {components} = product;
+    const productGIDs = JSON.parse(components.value) as string[];
+
+    const {nodes: componentNodes} = await storefront.query(
+      PRODUCTS_BY_IDS_QUERY,
+      {
+        variables: {ids: productGIDs},
+      },
+    );
+
+    componentProducts = componentNodes.filter(
+      (product: any) => product !== null,
+    );
+  } catch {}
+
+  try {
+    const sku = handle.split('-').slice(0, 2).join('-');
+    const {products: skuProducts} = await storefront.query(
+      SIMILAR_PRODUCTS_QUERY,
+      {
+        variables: {
+          query: `title:${sku} OR handle:${sku}`,
+          country: 'US', // example country code
+          language: 'EN', // example language code
+        },
+      },
+    );
+
+    recommendSkuProducts = skuProducts.edges
+      ?.filter((element: {node: any}) => element.node.handle !== handle)
+      .map((element: {node: any}) => element.node);
+  } catch {}
+
+  productRecommendations = [
+    ...componentProducts,
+    ...recommendSkuProducts,
+  ].filter((e) => e.availableForSale);
+
+  // Fetch the product recommendations here
+  // const {productRecommendations} = await storefront.query(
+  //   PRODUCT_RECOMMENDATIONS_QUERY,
+  //   {
+  //     variables: {
+  //       productId: product.id,
+  //     },
+  //   },
+  // );
+
+  return defer({
+    product,
+    variants,
+    productRecommendations,
+    // partHandle,
+  });
 }
 
 function redirectToFirstVariant({
@@ -141,7 +188,7 @@ export default function Product() {
   const {product, variants, productRecommendations} =
     useLoaderData<typeof loader>();
   const {selectedVariant, descriptionHtml} = product;
-
+    
   return (
     <>
       <ProductBreadcrumb product={product} />
@@ -168,63 +215,9 @@ export default function Product() {
                 variants={variants}
               />
               <ProductConfidence />
-              <div className="lg:fixed lg:w-5/12 lg:h-[150px] bottom-0 right-0">
-                <p className="font-titles uppercase font-bold text-3xl md:text-2xl py-1">
-                  People also buy
-                </p>
-
-                <div className="grid lg:grid-cols-3 bg-white gap-2">
-                  {productRecommendations &&
-                    productRecommendations.slice(0, 3).map((product, index) => (
-                      <Link
-                        className="border shadow rounded p-3 hover:bg-slate-100 transition-all ease-in-out flex gap-5 lg:gap-2"
-                        key={product.id}
-                        prefetch="intent"
-                        to={'#'}
-                        title={product.title}
-                      >
-
-                        {product.featuredImage && (
-                          <div className="h-24 lg:h-20 lg:w-20">
-                            <Image
-                              alt={
-                                product.featuredImage.altText || product.title
-                              }
-                              data={product.featuredImage}
-                              className="object-contain h-full"
-                              style={{
-                                width: 'auto',
-                              }}
-
-                              // sizes="(min-width: 45em) 400px, 100vw"
-                            />
-                          </div>
-                        )}
-                        <div>
-                          <h4
-                            className={`font-titles uppercase  lg:text-xs py-1`}
-                          >
-                            {product.title}
-                          </h4>
-                          <div className="flex lg:block items-center gap-2">
-                            <small className='flex gap-2 items-center'>
-                              <Money data={product.variants.nodes[0].price} />
-                              {product.availableForSale ? (
-                                <span className="text-lime-600 lg:text-xs font-bold">
-                                  In Stock
-                                </span>
-                              ) : (
-                                <span className="text-red-600 lg:text-xs font-bold">
-                                  Out of Stock
-                                </span>
-                              )}
-                            </small>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                </div>
-              </div>
+              <ProductRecommendations
+                productRecommendations={productRecommendations}
+              />
               {/* <ProductRecommendations products={productRecommendations} /> */}
             </div>
           </div>
@@ -234,10 +227,67 @@ export default function Product() {
   );
 }
 
-function ProductRecommendations({products}: {products: any[]}) {
+function ProductRecommendations({
+  productRecommendations,
+}: {
+  productRecommendations: any[];
+}) {
+  
+  if(!productRecommendations || !productRecommendations.length) {
+    return <></>
+  } 
+
   return (
-    <div className="lg:fixed bg-black w-5/12 h-40 bottom-0 right-0">
-      {products && products.map((product) => <div>{product}</div>)}
+    <div className="lg:fixed lg:w-5/12 lg:h-[150px] bottom-0 right-0 bg-white">
+      <p className="font-titles uppercase font-bold text-3xl md:text-2xl py-1">
+        People also buy
+      </p>
+
+      <div className="grid lg:grid-cols-3 bg-white gap-2">
+        { productRecommendations.slice(0, 3).map((product, index) => (
+            <Link
+              className="border shadow rounded p-3 hover:bg-slate-100 transition-all ease-in-out flex gap-5 lg:gap-2"
+              key={product.id}
+              prefetch="intent"
+              to={`/products/${product.handle}`}
+              title={product.title}
+            >
+              {product.featuredImage && (
+                <div className="h-24 lg:h-20 lg:w-20">
+                  <Image
+                    alt={product.featuredImage.altText || product.title}
+                    data={product.featuredImage}
+                    className="object-contain h-full"
+                    style={{
+                      width: 'auto',
+                    }}
+
+                    // sizes="(min-width: 45em) 400px, 100vw"
+                  />
+                </div>
+              )}
+              <div>
+                <h4 className={`font-titles uppercase  lg:text-xs py-1`}>
+                  {product.title}
+                </h4>
+                <div className="flex lg:block items-center gap-2">
+                  <small className="flex gap-2 items-center">
+                    <Money data={product.variants.nodes[0].price} />
+                    {product.availableForSale ? (
+                      <span className="text-lime-600 lg:text-xs font-bold">
+                        In Stock
+                      </span>
+                    ) : (
+                      <span className="text-red-600 lg:text-xs font-bold">
+                        Out of Stock
+                      </span>
+                    )}
+                  </small>
+                </div>
+              </div>
+            </Link>
+          ))}
+      </div>
     </div>
   );
 }
@@ -675,6 +725,9 @@ const PRODUCT_FRAGMENT = `#graphql
       description
       title
     }
+    components:metafield(namespace:"custom", key:"components"){
+      value
+    }
     applications:metafield(namespace:"custom", key:"applications"){
       value
     }
@@ -715,13 +768,28 @@ const PRODUCT_FRAGMENT = `#graphql
   ${PRODUCT_VARIANT_FRAGMENT}
 ` as const;
 
-const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
-  query ProductRecommendations(
-    $productId: ID!
+const PRODUCT_QUERY = `#graphql
+  query Product(
     $country: CountryCode
+    $handle: String!
     $language: LanguageCode
+    $selectedOptions: [SelectedOptionInput!]!
   ) @inContext(country: $country, language: $language) {
-    productRecommendations(productId: $productId) {
+    product(handle: $handle) {
+      ...Product
+    }
+  }
+  ${PRODUCT_FRAGMENT}
+` as const;
+
+const PRODUCTS_BY_IDS_QUERY = `#graphql
+query Products(
+  $ids: [ID!]!
+  $country: CountryCode
+  $language: LanguageCode
+) @inContext(country: $country, language: $language) {
+  nodes(ids: $ids) {
+    ... on Product {
       id
       title
       handle
@@ -741,20 +809,7 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
       }
     }
   }
-` as const;
-
-const PRODUCT_QUERY = `#graphql
-  query Product(
-    $country: CountryCode
-    $handle: String!
-    $language: LanguageCode
-    $selectedOptions: [SelectedOptionInput!]!
-  ) @inContext(country: $country, language: $language) {
-    product(handle: $handle) {
-      ...Product
-    }
-  }
-  ${PRODUCT_FRAGMENT}
+}
 ` as const;
 
 const PRODUCT_VARIANTS_FRAGMENT = `#graphql
@@ -780,6 +835,66 @@ const VARIANTS_QUERY = `#graphql
     }
   }
 ` as const;
+
+const SIMILAR_PRODUCTS_QUERY = `#graphql
+query ProductsBySearch(
+  $query: String!
+  $country: CountryCode
+  $language: LanguageCode
+) @inContext(country: $country, language: $language) {
+  products(first: 10, query: $query) {
+    edges {
+      node {
+        id
+        title
+        handle
+        availableForSale
+        featuredImage {
+          url
+          altText
+        }
+        variants(first: 1) {
+          nodes {
+            id
+            price {
+              amount
+              currencyCode
+            }
+          }
+        }
+      }
+    }
+  }
+}
+` as const;
+
+// const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
+//   query ProductRecommendations(
+//     $productId: ID!
+//     $country: CountryCode
+//     $language: LanguageCode
+//   ) @inContext(country: $country, language: $language) {
+//     productRecommendations(productId: $productId) {
+//       id
+//       title
+//       handle
+//       availableForSale
+//       featuredImage {
+//         url
+//         altText
+//       }
+//       variants(first: 1) {
+//         nodes {
+//           id
+//           price {
+//             amount
+//             currencyCode
+//           }
+//         }
+//       }
+//     }
+//   }
+// ` as const;
 
 /*
 <div
