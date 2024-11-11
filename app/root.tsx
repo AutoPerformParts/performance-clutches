@@ -119,13 +119,13 @@ export default function App() {
         <Links />
       </head>
       <body className="dark:bg-slate-900">
-        <script src="https://cdn.pulse.is/livechat/loader.js" data-live-chat-id="67321dc9e1847ca8f50f0ab7" async></script>
         <Layout {...data}>
           <Outlet />
         </Layout>
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
         <LiveReload nonce={nonce} />
+        <script src="https://cdn.pulse.is/livechat/loader.js" data-live-chat-id="67321dc9e1847ca8f50f0ab7" async></script>
       </body>
     </html>
   );
