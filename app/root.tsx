@@ -115,6 +115,7 @@ export default function App() {
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <link rel="stylesheet" href="https://use.typekit.net/zmz2bqy.css" />
         <meta name="theme-color" content="#FFFFFF" />
+        <script src="https://cdn.pulse.is/livechat/loader.js" data-live-chat-id="67321dc9e1847ca8f50f0ab7" async></script>
         <Meta />
         <Links />
       </head>
