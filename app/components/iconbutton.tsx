@@ -5,10 +5,12 @@ export function IconButton({
   to,
   children,
   onClick,
+  title
 }: {
   to?: string;
   children: ReactNode;
   onClick?: () => void;
+  title?: string;
 }) {
   // Base styles
   const baseClasses =
@@ -17,7 +19,7 @@ export function IconButton({
   // Return a link
   if (!!to) {
     return (
-      <Link to={to} className={baseClasses}>
+      <Link to={to} className={baseClasses} title={title}>
         {children}
       </Link>
     );

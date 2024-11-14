@@ -3,7 +3,7 @@ import {IconButton} from './iconbutton';
 
 export function AccountButton() {
   return (
-    <IconButton to="/account">
+    <IconButton to="https://dealers.performclutch.com" title='Dealers Portal'>
       <FiUser />
     </IconButton>
   );
